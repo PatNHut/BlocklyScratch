@@ -77,16 +77,23 @@ Blockly.Generator.prototype.workspaceToCode = function(workspace) {
   var code = [];
   this.init(workspace);
   var blocks = workspace.getTopBlocks(true);
+	
   for (var x = 0, block; block = blocks[x]; x++) {
+	  
+	  
+	  
 	  if(block.type.indexOf('events_hat') == -1)
 	  {
 		  continue;
 	  }
     var line = this.blockToCode(block);
-    if (goog.isArray(line)) {
+	//alert(line)
+	//alert(block.id)
+	if (goog.isArray(line)) {
       // Value blocks return tuples of code and operator order.
       // Top-level blocks don't care about operator order.
       line = line[0];
+	  
     }
     if (line) {
       if (block.outputConnection && this.scrubNakedValue) {
@@ -330,3 +337,77 @@ Blockly.Generator.prototype.provideFunction_ = function(desiredName, code) {
   }
   return this.functionNames_[desiredName];
 };
+/**
+ *GetID of hat blocks
+ *and get associated code
+
+**/
+Blockly.Generator.prototype.getCodebyBlockID = function(workspace) {
+	if (!workspace) {
+		// Backwards compatability from before there could be multiple workspaces.
+		console.warn('No workspace specified in workspaceToCode call.  Guessing.');
+		workspace = Blockly.getMainWorkspace();
+	}
+
+		var objects = [];
+		this.init(workspace);
+		var blocks = workspace.getTopBlocks(true);
+
+	for (var x = 0, block; block = blocks[x]; x++) {
+		var blockID = [];
+		var blockCode = [];
+		var blockChildren = [];
+		if(block.type.indexOf('events_hat') == -1)
+		{	
+			continue;
+		}
+		var line = this.blockToCode(block);
+		//alert(line)
+		//alert(block.id)
+		if (goog.isArray(line)) 
+		{
+			// Value blocks return tuples of code and operator order.
+			// Top-level blocks don't care about operator order.
+			line = line[0];
+
+		}
+		if (line) 
+		{
+			if (block.outputConnection && this.scrubNakedValue) 
+			{
+				// This block is a naked value.  Ask the language's code generator if
+				// it wants to append a semicolon, or something.
+				line = this.scrubNakedValue(line);
+			}
+
+			blockID.push(block.id);
+			blockChildren = block.getDescendants();
+
+			// Final scrubbing of whitespace.
+			line = line.replace(/^\s+\n/, '');
+			line = line.replace(/\n\s+$/, '\n');
+			line = line.replace(/[ \t]+\n/g, '\n');
+			blockCode.push(line);
+
+			var jsObject = [blockID,blockChildren,blockCode];
+			objects.push(jsObject);
+		}
+	}
+//alert(objects);
+return objects;
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

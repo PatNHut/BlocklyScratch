@@ -6,6 +6,7 @@ var interpreter;
 var time = 1;
 var mouseX;
 var mouseY;
+var writeActive = false;
 
 /* Method called when a change is detected in the page to resize the blockly area */
 var resizeBlockly = function(e) {
@@ -171,6 +172,7 @@ var stepCode = function () {
 	if(interpreter == null)
 	{
 		var code = generateInterpreterCode(Blockly.JavaScript.workspaceToCode(workspace));
+		
 		interpreter = new Interpreter(code, initApi);
 		workspace.traceOn(true);
 		highlightPause = false;
@@ -212,10 +214,134 @@ var stopCode = function() {
 var runCode = function() {
 	Blockly.JavaScript.STATEMENT_PREFIX = null;
 	var code = generateInterpreterCode(Blockly.JavaScript.workspaceToCode(workspace));
+	//alert(Blockly.JavaScript.workspaceToCode(workspace));
+	//alert(code);
 	interpreter = new Interpreter(code, initApi);
 	nextStep();
 	Blockly.JavaScript.STATEMENT_PREFIX = 'highlightBlock(%1);\n';
 };
+
+var writeCode = function()
+{
+	jQuery('#writeDiv').html('');
+
+	var writeDiv  = $('#writeDiv');
+	//$('<textarea rows="10" cols="50" id = "writeBox"></textarea>').appendTo(writeDiv);
+	//$('<button id="btnValidate" class="btn btn-Validate">Validate</button>').appendTo(writeDiv);
+	//document.getElementById('btnValidate').addEventListener('click', compareCode, false);
+	
+	//$('<button id="btnValidate" class="btn btn-Validate">Validate</button>').appendTo(writeDiv);
+	//document.getElementById('btnValidate').addEventListener('click', compareCode, false);
+	
+	var jsObjects = Blockly.JavaScript.getCodebyBlockID(workspace);
+	
+	
+	Blockly.JavaScript.STATEMENT_PREFIX = 'highlightBlock(%1);\n';
+	Blockly.JavaScript.STATEMENT_PREFIX = null;
+	var code1 = Blockly.JavaScript.workspaceToCode(workspace);
+	var blockCode = code1.split("\n");
+	for(i = 1; i< blockCode.length-1; i++)
+	{
+		var example = blockCode[i];
+		NewExample = example.replace(/\([^)]+\)/,"()");
+		
+		newRow =""
+		newRow +='<textarea rows="1" cols="50" id = "writeBox_'+i+'"></textarea> ';
+		newRow+='<button class = "hintButton" onclick="showHint('+i+')">Hint?</button>';
+		newRow +='<label class = "hide" id ="hintLabel_'+i+'" for=""writeBox_'+i+'"">'+NewExample+'</label>';
+		
+		newRow+=" <br>";
+		$(newRow).appendTo(writeDiv);
+	}
+	
+	$('<button id="btnValidate" class="btn btn-Validate">Validate</button><label id ="checkLabel" for="btnValidate"></label>').appendTo(writeDiv);
+	
+	document.getElementById('btnValidate').addEventListener('click', compareCode, false);
+	document.getElementById("writeDiv").style.paddingLeft = "50px";
+	document.getElementById("checkLabel").style.paddingLeft = "50px";
+	writeActive = true;
+	
+
+	
+}
+
+
+var showHint = function(i)
+{
+	$('#hintLabel_'+i).removeClass("hide");
+	document.getElementById('hintLabel_'+i).style.paddingLeft = "10px";
+	
+}
+
+
+var compareCode = function()
+{
+	//top level blocks
+	//|-id children code
+	var jsObjects = Blockly.JavaScript.getCodebyBlockID(workspace);
+	
+	var code = "//hat \n";
+	var writeTable = document.getElementById('writeTable');
+
+	
+	i = 1;
+	while(true){
+		try {
+			code += document.getElementById("writeBox_"+i).value +"\n";
+			i++;
+		}
+		catch(err) {
+			break;
+		}
+	}
+	
+	
+	Blockly.JavaScript.STATEMENT_PREFIX = 'highlightBlock(%1);\n';
+	
+	Blockly.JavaScript.STATEMENT_PREFIX = null;
+	var code1 = Blockly.JavaScript.workspaceToCode(workspace);
+	//var code1 = generateInterpreterCode(Blockly.JavaScript.workspaceToCode(workspace));
+	
+	function replaceAll(str, find, replace) {
+	  return str.replace(new RegExp(find, 'g'), replace);
+	}
+
+	
+	
+
+	var i=1;
+	
+	code = replaceAll(code, '"','\'');
+	code1 = replaceAll(code1, '"','\'');
+	code = replaceAll(code, '/s','');
+	code1 = replaceAll(code1,'/s','');
+	
+	var writtenCode = code.split("\n");
+	var blockCode = code1.split("\n");
+	
+	if(code1.replace(/ /g,'') != code.replace(/ /g,'') )
+	{
+		for(i = 1; i< writtenCode.length; i++)
+		{
+			
+			
+			if(writtenCode[i].replace(/ /g,'') == blockCode[i].replace(/ /g,'') )
+			{
+				
+			}
+			else{ 
+				$("#checkLabel").empty();
+				$("#checkLabel").append("error on line "+ i);
+				break;
+			}
+		}
+	}
+	else{
+		$("#checkLabel").empty();
+		$("#checkLabel").append("Your Code is correct");
+	}
+}
+
 var timer = function()
 {
 	var textarea = document.getElementById("textArea");
@@ -231,6 +357,7 @@ var registerButtons = function() {
 	document.getElementById('btnStep').addEventListener('click', stepCode, false);
 	document.getElementById('btnStop').addEventListener('click', stopCode, false);
 	document.getElementById('btnCode').addEventListener('click', downloadCode, false);
+	document.getElementById('btnWrite').addEventListener('click', writeCode, false);
 	document.getElementById('btnExportXML').addEventListener('click', exportXML, false);
   document.getElementById('btnImportSVG').addEventListener('click', openImportFile, false);
 };
