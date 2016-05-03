@@ -235,20 +235,47 @@ var writeCode = function()
 	
 	var jsObjects = Blockly.JavaScript.getCodebyBlockID(workspace);
 	
-	
 	Blockly.JavaScript.STATEMENT_PREFIX = 'highlightBlock(%1);\n';
 	Blockly.JavaScript.STATEMENT_PREFIX = null;
 	var code1 = Blockly.JavaScript.workspaceToCode(workspace);
-	var blockCode = code1.split("\n");
-	for(i = 1; i< blockCode.length-1; i++)
+	var blockCode = [];
+	
+	var blockCodeRaw = code1.split("\n");
+	
+	function replaceAll(str, find, replace) {
+	  return str.replace(new RegExp(find, 'g'), replace);
+	}
+
+	for(z = 0; z< blockCodeRaw.length; z++)
+	{
+		
+		
+		if(blockCodeRaw[z] !="") 
+		{
+			if(!blockCodeRaw[z].match(/\/\/* /))
+			{
+				blockCode.push(blockCodeRaw[z]);
+			}
+		}
+		
+	}
+	
+	
+	for(i = 0; i< blockCode.length; i++)
 	{
 		var example = blockCode[i];
-		NewExample = example.replace(/\([^)]+\)/,"()");
+		NewExample = replaceAll(example,/\([^)]+\)/,"()");
+		
+		
 		
 		newRow =""
 		newRow +='<textarea rows="1" cols="50" id = "writeBox_'+i+'"></textarea> ';
-		newRow+='<button class = "hintButton" onclick="showHint('+i+')">Hint?</button>';
+		newRow+='<button class = "btn btn-Validate hintButton" onclick="showHint('+i+')" id = "hint_'+i+'">Hint?</button>';
+		newRow+='<button class = "btn btn-Validate hintButton hide" onclick="showSol('+i+')" id = "solution_'+i+'">Solve?</button>';
+		
+		
 		newRow +='<label class = "hide" id ="hintLabel_'+i+'" for=""writeBox_'+i+'"">'+NewExample+'</label>';
+		newRow +='<label class = "hide" id ="solutionLabel_'+i+'" for=""writeBox_'+i+'"">'+example+'</label>';
 		
 		newRow+=" <br>";
 		$(newRow).appendTo(writeDiv);
@@ -270,6 +297,19 @@ var showHint = function(i)
 {
 	$('#hintLabel_'+i).removeClass("hide");
 	document.getElementById('hintLabel_'+i).style.paddingLeft = "10px";
+	$('#hint_'+i).addClass("hide");
+	$('#solution_'+i).removeClass("hide");
+	
+	
+}
+
+var showSol = function(i)
+{
+	$('#solutionLabel_'+i).removeClass("hide");
+	$('#hintLabel_'+i).addClass("hide");
+	document.getElementById('hintLabel_'+i).style.paddingLeft = "10px";
+	$('#solution_'+i).addClass("hide");
+	
 	
 }
 
@@ -280,11 +320,11 @@ var compareCode = function()
 	//|-id children code
 	var jsObjects = Blockly.JavaScript.getCodebyBlockID(workspace);
 	
-	var code = "//hat \n";
+	var code = "";
 	var writeTable = document.getElementById('writeTable');
 
 	
-	i = 1;
+	i = 0;
 	while(true){
 		try {
 			code += document.getElementById("writeBox_"+i).value +"\n";
@@ -306,9 +346,6 @@ var compareCode = function()
 	  return str.replace(new RegExp(find, 'g'), replace);
 	}
 
-	
-	
-
 	var i=1;
 	
 	code = replaceAll(code, '"','\'');
@@ -317,13 +354,29 @@ var compareCode = function()
 	code1 = replaceAll(code1,'/s','');
 	
 	var writtenCode = code.split("\n");
-	var blockCode = code1.split("\n");
+	var blockCodeRaw = code1.split("\n");
+	
+	blockCode =[];
+	
+	for(z = 0; z< blockCodeRaw.length; z++)
+	{
+		if(blockCodeRaw[z] !="")
+		{
+			if(!blockCodeRaw[z].match(/\/\/* /))
+			{
+				blockCode.push(blockCodeRaw[z]);
+			}
+		}
+	}
+	
 	
 	if(code1.replace(/ /g,'') != code.replace(/ /g,'') )
 	{
-		for(i = 1; i< writtenCode.length; i++)
+		noErrors = true;
+		for(i = 0; i< blockCode.length ; i++)
 		{
 			
+
 			
 			if(writtenCode[i].replace(/ /g,'') == blockCode[i].replace(/ /g,'') )
 			{
@@ -332,15 +385,24 @@ var compareCode = function()
 			else{ 
 				$("#checkLabel").empty();
 				$("#checkLabel").append("error on line "+ i);
+				noErrors = false;
 				break;
 			}
+			
 		}
+		if(noErrors)
+		{
+			$("#checkLabel").empty();
+			$("#checkLabel").append("Your Code is correct");
+		}
+		
 	}
 	else{
 		$("#checkLabel").empty();
 		$("#checkLabel").append("Your Code is correct");
 	}
 }
+
 
 var timer = function()
 {
